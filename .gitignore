@@ -1,0 +1,22 @@
+node_modules/
+.env
+*.log
+.DS_Store
+dist/
+build/
+coverage/
+.idea/
+.vscode/
+
+# Blockchain
+blockchain/cache/
+blockchain/artifacts/
+blockchain/deployment.json
+
+# Server
+server/uploads/
+
+# Client
+client/dist/
+client/.vite/
+

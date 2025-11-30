@@ -1,0 +1,30 @@
+{
+  "name": "trustchain-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain smart contracts for TrustChain - Digital Evidence Chain of Custody",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "node": "hardhat node"
+  },
+  "keywords": [
+    "blockchain",
+    "solidity",
+    "hardhat",
+    "evidence",
+    "chain-of-custody"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}
+
