@@ -1,0 +1,36 @@
+# Server Environment Variables Template
+# Copy this to server/.env and fill in your values
+
+# Server Configuration
+PORT=5000
+
+# MongoDB Atlas Connection
+# Replace with your MongoDB Atlas connection string
+# Format: mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/trustchain?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/trustchain?retryWrites=true&w=majority
+
+# For local MongoDB (if not using Atlas):
+# MONGODB_URI=mongodb://localhost:27017/trustchain
+
+# JWT Secret Key (Change this in production!)
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Blockchain Configuration
+BLOCKCHAIN_RPC_URL=http://localhost:8545
+PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+# IPFS Configuration
+# Local IPFS API endpoint
+IPFS_URL=http://localhost:5001
+
+# IPFS Public Gateway URL
+# Replace YOUR_PUBLIC_IP with your actual public IP address
+# Or use a public gateway service like:
+# - https://ipfs.io
+# - https://gateway.ipfs.io
+# - https://cloudflare-ipfs.com
+IPFS_GATEWAY_URL=http://YOUR_PUBLIC_IP:8080
+
+# Alternative: Use public gateway service (no setup required)
+# IPFS_GATEWAY_URL=https://ipfs.io
+

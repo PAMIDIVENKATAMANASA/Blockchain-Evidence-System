@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const { authenticate, authorize } = require("../middleware/auth");
 const Evidence = require("../models/Evidence");
-const { uploadToIPFS, calculateFileHash, downloadFromIPFS } = require("../services/ipfs");
+const { uploadToIPFS, calculateFileHash, downloadFromIPFS, getPublicGatewayURL } = require("../services/ipfs");
 const { addEvidence, getSignerAddress } = require("../services/blockchain");
 const { ethers } = require("ethers");
 
@@ -78,6 +78,7 @@ router.post(
           evidenceId: evidence.evidenceId,
           fileName: evidence.fileName,
           ipfsHash: evidence.ipfsHash,
+          ipfsGatewayURL: getPublicGatewayURL(evidence.ipfsHash),
           blockchainHash: evidence.blockchainHash,
           timestamp: evidence.timestamp,
           status: evidence.status,
@@ -181,7 +182,13 @@ router.get("/:evidenceId", authenticate, async (req, res) => {
       return res.status(404).json({ message: "Evidence not found" });
     }
 
-    res.json({ evidence });
+    // Add public gateway URL to response
+    const evidenceWithGateway = {
+      ...evidence.toObject(),
+      ipfsGatewayURL: getPublicGatewayURL(evidence.ipfsHash),
+    };
+    
+    res.json({ evidence: evidenceWithGateway });
   } catch (error) {
     console.error("Get evidence error:", error);
     res.status(500).json({ message: "Error fetching evidence" });

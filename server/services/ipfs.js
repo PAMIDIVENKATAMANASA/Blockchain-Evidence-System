@@ -14,6 +14,20 @@ function getIPFSClient() {
   return client
 }
 
+// Pin file to IPFS (keeps it available on network)
+async function pinFile(cid) {
+  try {
+    const ipfs = getIPFSClient()
+    await ipfs.pin.add(cid)
+    console.log(`✅ File pinned to IPFS: ${cid}`)
+    return { success: true, cid }
+  } catch (error) {
+    console.error('Error pinning file:', error)
+    // Don't throw - pinning failure shouldn't break upload
+    return { success: false, error: error.message }
+  }
+}
+
 // Upload file to IPFS (any type)
 async function uploadToIPFS(fileBuffer, fileName) {
   try {
@@ -25,6 +39,14 @@ async function uploadToIPFS(fileBuffer, fileName) {
     })
 
     const cid = result.cid.toString()
+
+    // Automatically pin the file to keep it available on the network
+    try {
+      await pinFile(cid)
+    } catch (pinError) {
+      console.warn(`⚠️  Could not pin file ${cid}:`, pinError.message)
+      // Continue even if pinning fails - file is still uploaded
+    }
 
     return {
       success: true,
@@ -65,8 +87,18 @@ function calculateFileHash(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex')
 }
 
+// Get public gateway URL for a CID
+function getPublicGatewayURL(cid) {
+  const gatewayURL = process.env.IPFS_GATEWAY_URL || process.env.IPFS_GATEWAY_URL || 'http://localhost:8080'
+  // Support both with and without trailing slash
+  const baseURL = gatewayURL.endsWith('/') ? gatewayURL.slice(0, -1) : gatewayURL
+  return `${baseURL}/ipfs/${cid}`
+}
+
 module.exports = {
   uploadToIPFS,
   downloadFromIPFS,
   calculateFileHash,
+  getPublicGatewayURL,
+  pinFile,
 }
