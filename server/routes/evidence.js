@@ -48,6 +48,12 @@ router.post(
 
       // Step 4: Add evidence hash to blockchain (store file hash, not IPFS CID)
       const blockchainResult = await addEvidence(fileHashBytes32, collectorAddress);
+      
+      // Log network info for debugging
+      if (blockchainResult.network === "localhost") {
+        console.warn("⚠️  WARNING: Using localhost blockchain. Transactions won't appear on Etherscan!");
+        console.warn("   Update server/.env: BLOCKCHAIN_RPC_URL=https://rpc.sepolia.org");
+      }
 
       // Step 5: Save metadata to MongoDB
       const evidence = new Evidence({
@@ -79,7 +85,10 @@ router.post(
           fileName: evidence.fileName,
           ipfsHash: evidence.ipfsHash,
           ipfsGatewayURL: getPublicGatewayURL(evidence.ipfsHash),
+          ipfsPublicURL: `https://ipfs.io/ipfs/${evidence.ipfsHash}`, // Public IPFS gateway
           blockchainHash: evidence.blockchainHash,
+          etherscanUrl: blockchainResult.etherscanUrl || null, // Etherscan link if on Sepolia
+          network: blockchainResult.network || "unknown",
           timestamp: evidence.timestamp,
           status: evidence.status,
         },

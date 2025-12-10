@@ -33,12 +33,19 @@ mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000, // 30 seconds
+    socketTimeoutMS: 45000, // 45 seconds
+    connectTimeoutMS: 30000, // 30 seconds
+    retryWrites: true,
+    w: 'majority',
   })
   .then(() => {
     console.log("✅ Connected to MongoDB");
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("❌ MongoDB connection error:", err.message);
+    console.error("💡 Check your MONGODB_URI in server/.env");
+    console.error("💡 Verify internet connection and MongoDB Atlas network access");
   });
 
 // Server

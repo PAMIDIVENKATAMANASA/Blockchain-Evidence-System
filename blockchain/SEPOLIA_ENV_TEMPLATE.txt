@@ -1,0 +1,15 @@
+ALCHEMY_SEPOLIA_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+# or use INFURA:
+# SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+
+# Deployer private key (use a fresh testnet wallet funded with Sepolia ETH)
+SEPOLIA_PRIVATE_KEY=0x6f1c58178a7ec68531d13b950a58a7d6c553633759fd9f53310be3982398ee67
+
+# Etherscan API key (for verification)
+ETHERSCAN_API_KEY=Z8AKGG8BWFRYSQHTT88UVW247EIZJ3FE5I
+
+# Optional gas settings
+# SEPOLIA_GAS_PRICE=auto
+# SEPOLIA_GAS_MULTIPLIER=1.2
+
+

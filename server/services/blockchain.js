@@ -32,11 +32,50 @@ function loadContractInfo() {
 // Initialize on module load
 loadContractInfo();
 
-// Get provider (local Hardhat node)
+// Get provider (Sepolia testnet by default, or use environment variable)
+// --- Start of FIX for server/services/blockchain.js ---
+
+// Get provider (Sepolia testnet by default, or use environment variable)
 function getProvider() {
-  const providerUrl = process.env.BLOCKCHAIN_RPC_URL || "http://localhost:8545";
-  return new ethers.JsonRpcProvider(providerUrl);
+  const providerUrl = process.env.BLOCKCHAIN_RPC_URL || "https://rpc.sepolia.org";
+
+  // Detect network from URL (for logging/Etherscan links)
+  const isSepolia = providerUrl.includes("sepolia") || providerUrl.includes("11155111");
+  const isLocalhost = providerUrl.includes("localhost") || providerUrl.includes("127.0.0.1");
+
+  // *** THE FIX IS BELOW: Correctly passing URL and configuration options ***
+  
+  // 1. Define the network details
+  const network = {
+    name: "sepolia",
+    chainId: 11155111,
+  };
+
+  // 2. Define the provider options, including the timeout
+  const providerOptions = {
+    staticNetwork: true, // Prevent network detection (faster)
+    batchMaxCount: 1, // Disable batching for reliability
+    // Pass the request configuration to the Provider's options
+    // This correctly applies the timeout to the underlying fetch calls
+    request: {
+        timeout: 60000 // 60 seconds
+    }
+  };
+
+  // 3. Create provider using the URL, Network details, and Options
+  const provider = new ethers.JsonRpcProvider(providerUrl, network, providerOptions);
+
+  // Store network info for Etherscan links (your original logic)
+  provider._networkInfo = {
+    isSepolia,
+    isLocalhost,
+    url: providerUrl
+  };
+
+  return provider;
 }
+
+// --- End of FIX for server/services/blockchain.js ---
 
 // Get signer from private key
 function getSigner() {
@@ -69,11 +108,27 @@ function getContract() {
 // hashBytes32 should be the file hash (SHA256 converted to bytes32 via keccak256)
 async function addEvidence(hashBytes32, collectorAddress) {
   try {
+    // Test provider connection first
+    // *** FIX 1: Changed 'const' to 'let' for provider ***
+    let provider = getProvider();
+    try {
+      await provider.getBlockNumber();
+    } catch (providerError) {
+      throw new Error(`Cannot connect to blockchain RPC: ${providerError.message}. Check BLOCKCHAIN_RPC_URL in server/.env`);
+    }
+
     const contract = getContract();
 
+    // Send transaction with increased timeout
     const tx = await contract.addEvidence(hashBytes32, collectorAddress);
-    // tx.wait() returns the transaction receipt in ethers v6
-    const receipt = await tx.wait();
+
+    // Wait for transaction with timeout
+    const receipt = await Promise.race([
+      tx.wait(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Transaction timeout - network may be slow")), 120000) // 2 minutes
+      )
+    ]);
 
     // Get the evidence ID from events in the receipt
     const event = receipt.logs
@@ -86,20 +141,44 @@ async function addEvidence(hashBytes32, collectorAddress) {
       })
       .find((e) => e && e.name === "EvidenceAdded");
 
+    // Get network info for Etherscan link
+    provider = getProvider(); // SAFE now that 'provider' is 'let'
+    
+    // *** FIX 2: Changed 'const' to 'let' for networkInfo ***
+    let networkInfo = provider._networkInfo || {}; 
+
+    // Generate Etherscan URL if on Sepolia
+    let etherscanUrl = null;
+    if (networkInfo.isSepolia) {
+      etherscanUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+    }
+
     if (event) {
       return {
         success: true,
         evidenceId: event.args.evidenceId.toString(),
         transactionHash: tx.hash,
+        etherscanUrl: etherscanUrl,
+        network: networkInfo.isSepolia ? "sepolia" : networkInfo.isLocalhost ? "localhost" : "unknown",
       };
     }
 
     // Fallback: get the latest evidence count
     const count = await contract.getEvidenceCount();
+    provider = getProvider(); // SAFE now that 'provider' is 'let'
+    networkInfo = provider._networkInfo || {}; // SAFE now that 'networkInfo' is 'let'
+
+    etherscanUrl = null;
+    if (networkInfo.isSepolia) {
+      etherscanUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+    }
+
     return {
       success: true,
       evidenceId: count.toString(),
       transactionHash: tx.hash,
+      etherscanUrl: etherscanUrl,
+      network: networkInfo.isSepolia ? "sepolia" : networkInfo.isLocalhost ? "localhost" : "unknown",
     };
   } catch (error) {
     console.error("Error adding evidence to blockchain:", error);
@@ -124,7 +203,6 @@ async function getOriginalHash(evidenceId) {
     throw error;
   }
 }
-
 // Check if address is judge
 async function isJudge(address) {
   try {
@@ -157,4 +235,3 @@ module.exports = {
   loadContractInfo,
   getSignerAddress,
 };
-

@@ -9,7 +9,11 @@ function getIPFSClient() {
     const url = process.env.IPFS_URL || 'http://localhost:5001'
 
     // For v57, we can pass a URL string
-    client = create({ url })
+    // Add timeout configuration
+    client = create({ 
+      url,
+      timeout: 30000, // 30 seconds timeout
+    })
   }
   return client
 }
@@ -18,8 +22,19 @@ function getIPFSClient() {
 async function pinFile(cid) {
   try {
     const ipfs = getIPFSClient()
-    await ipfs.pin.add(cid)
+    
+    // Pin the file (recursive pin by default)
+    await ipfs.pin.add(cid, { recursive: true })
     console.log(`✅ File pinned to IPFS: ${cid}`)
+    
+    // Also announce to DHT to make it discoverable
+    try {
+      await ipfs.dht.provide(cid)
+      console.log(`✅ File announced to IPFS DHT: ${cid}`)
+    } catch (dhtError) {
+      console.warn(`⚠️  Could not announce to DHT: ${dhtError.message}`)
+    }
+    
     return { success: true, cid }
   } catch (error) {
     console.error('Error pinning file:', error)
@@ -31,6 +46,22 @@ async function pinFile(cid) {
 // Upload file to IPFS (any type)
 async function uploadToIPFS(fileBuffer, fileName) {
   try {
+    // Check if IPFS is accessible
+    const ipfsUrl = process.env.IPFS_URL || 'http://localhost:5001'
+    
+    // Test IPFS connection first
+    try {
+      const testResponse = await fetch(`${ipfsUrl}/api/v0/version`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      })
+      if (!testResponse.ok) {
+        throw new Error(`IPFS API not responding: ${testResponse.status}`)
+      }
+    } catch (testError) {
+      throw new Error(`IPFS daemon is not running or not accessible at ${ipfsUrl}. Please start IPFS: ipfs daemon`)
+    }
+
     const ipfs = getIPFSClient()
 
     const result = await ipfs.add({
@@ -56,6 +87,9 @@ async function uploadToIPFS(fileBuffer, fileName) {
     }
   } catch (error) {
     console.error('Error uploading to IPFS:', error)
+    if (error.message.includes('IPFS daemon')) {
+      throw new Error(`IPFS Error: ${error.message}. Make sure IPFS daemon is running: 'ipfs daemon'`)
+    }
     throw error
   }
 }

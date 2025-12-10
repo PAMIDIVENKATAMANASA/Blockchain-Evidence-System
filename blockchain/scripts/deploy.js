@@ -9,15 +9,29 @@ async function main() {
   await chainOfCustody.waitForDeployment();
 
   const contractAddress = await chainOfCustody.getAddress();
+  const deployer = (await hre.ethers.getSigners())[0].address;
+  const deploymentTx = chainOfCustody.deploymentTransaction();
+  const txHash = deploymentTx ? deploymentTx.hash : null;
+
   console.log("ChainOfCustody deployed to:", contractAddress);
   console.log("Contract owner:", await chainOfCustody.owner());
+  console.log("Deployer address:", deployer);
+  
+  if (txHash) {
+    console.log("Transaction hash:", txHash);
+    if (hre.network.name === "sepolia") {
+      console.log("View on Etherscan:", `https://sepolia.etherscan.io/tx/${txHash}`);
+      console.log("Contract on Etherscan:", `https://sepolia.etherscan.io/address/${contractAddress}`);
+    }
+  }
 
   // Save deployment info
   const fs = require("fs");
   const deploymentInfo = {
     contractAddress: contractAddress,
     network: hre.network.name,
-    deployer: (await hre.ethers.getSigners())[0].address,
+    deployer: deployer,
+    transactionHash: txHash,
     timestamp: new Date().toISOString(),
   };
 
