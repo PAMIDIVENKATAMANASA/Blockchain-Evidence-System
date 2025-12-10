@@ -20,3 +20,4 @@ server/uploads/
 client/dist/
 client/.vite/
 
+*.md
