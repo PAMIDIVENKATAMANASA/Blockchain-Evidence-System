@@ -21,13 +21,13 @@ Your server is configured to use remote services. Before starting, ensure you cr
 
 1. Install Dependencies
 
-    # Blockchain (Contracts, Deployment)
+    # Blockchain 
     cd blockchain && npm install && cd ..
        
-    # Server (Backend API, Mongoose, Ethers)
+    # Server 
     cd server && npm install && cd ..
        
-    # Client (Frontend UI, React/Vite)
+    # Client (
     cd client && npm install && cd ..
 
 2. Deploy Contract
