@@ -22,31 +22,40 @@ Your server is configured to use remote services. Before starting, ensure you cr
 1. Install Dependencies
 
     # Blockchain 
-    cd blockchain && npm install && cd ..
+    cd blockchain
+   
+    npm install  
        
     # Server 
-    cd server && npm install && cd ..
+    cd server
+   
+    npm install
        
-    # Client (
-    cd client && npm install && cd ..
+    # Client 
+    cd client
+   
+    npm install 
 
-2. Deploy Contract
+3. Deploy Contract
 
    cd blockchain
    npx hardhat run scripts/deploy.js --network sepolia
    
-3. Start Services (3 Terminals)
+4. Start Services (3 Terminals)
 
    Terminal:1	IPFS Daemon
+   
        	ipfs daemon
    
    Terminal:2	Server API
+   
        cd server && npm start
 
    Terminal:3	Client UI
+   
        cd client && npm run dev
 
-4. Access Application
+5. Access Application
 
 Open your browser to: http://localhost:3000
 
