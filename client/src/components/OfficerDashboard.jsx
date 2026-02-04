@@ -186,12 +186,36 @@ const OfficerDashboard = ({ user, onLogout }) => {
               {evidence.map((item) => (
                 <div key={item._id} className="evidence-card">
                   <h3>{item.fileName}</h3>
+                  <p><strong>Evidence ID:</strong> {item.evidenceId}</p>
                   <p><strong>Type:</strong> {item.fileType}</p>
                   <p><strong>Size:</strong> {(item.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                  <p><strong>IPFS Hash:</strong> <code>{item.ipfsHash}</code></p>
+                  <p><strong>IPFS Hash:</strong> <code className="hash">{item.ipfsHash}</code></p>
+                  <p><strong>Blockchain Hash:</strong> <code className="hash">{item.blockchainHash}</code></p>
                   <p><strong>Status:</strong> <span className={`status ${item.status}`}>{item.status}</span></p>
                   <p><strong>Uploaded:</strong> {new Date(item.timestamp).toLocaleString()}</p>
                   {item.description && <p><strong>Description:</strong> {item.description}</p>}
+                  {item.blockchainHash && (
+                    <div className="blockchain-links">
+                      <a 
+                        href={`https://sepolia.etherscan.io/tx/${item.blockchainHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="etherscan-link"
+                      >
+                        🔗 View on Etherscan
+                      </a>
+                      {item.ipfsHash && (
+                        <a 
+                          href={`https://ipfs.io/ipfs/${item.ipfsHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ipfs-link"
+                        >
+                          📦 View on IPFS
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

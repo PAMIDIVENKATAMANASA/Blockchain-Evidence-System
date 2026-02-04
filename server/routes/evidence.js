@@ -55,28 +55,48 @@ router.post(
         console.warn("   Update server/.env: BLOCKCHAIN_RPC_URL=https://rpc.sepolia.org");
       }
 
-      // Step 5: Save metadata to MongoDB
-      const evidence = new Evidence({
-        evidenceId: parseInt(blockchainResult.evidenceId),
-        fileName: req.file.originalname,
-        fileType: req.file.mimetype,
-        fileSize: req.file.size,
-        ipfsHash: ipfsResult.cid,
-        blockchainHash: blockchainResult.transactionHash,
-        fileHash: fileHash, // Store original file hash for reference
-        collectorId: officer._id,
-        collectorName: officer.name,
-        collectorAddress: collectorAddress,
-        timestamp: new Date(),
-        gpsCoordinates: {
-          latitude: gpsLatitude ? parseFloat(gpsLatitude) : null,
-          longitude: gpsLongitude ? parseFloat(gpsLongitude) : null,
-        },
-        description: description || "",
-        status: "sealed",
-      });
+      // Step 5: Check if evidenceId already exists (handle duplicate key error)
+      const evidenceId = parseInt(blockchainResult.evidenceId);
+      let evidence = await Evidence.findOne({ evidenceId });
 
-      await evidence.save();
+      if (evidence) {
+        // Evidence with this ID already exists
+        // Check if it's the same transaction (retry scenario)
+        if (evidence.blockchainHash === blockchainResult.transactionHash) {
+          // Same transaction - return existing evidence
+          console.log(`ℹ️  Evidence ${evidenceId} already exists with same transaction hash. Returning existing record.`);
+        } else {
+          // Different transaction - this is a conflict
+          console.error(`❌ Evidence ID ${evidenceId} conflict: existing tx ${evidence.blockchainHash}, new tx ${blockchainResult.transactionHash}`);
+          return res.status(409).json({
+            message: "Evidence ID conflict. Please try uploading again.",
+            error: "Duplicate evidenceId with different transaction hash"
+          });
+        }
+      } else {
+        // Create new evidence record
+        evidence = new Evidence({
+          evidenceId: evidenceId,
+          fileName: req.file.originalname,
+          fileType: req.file.mimetype,
+          fileSize: req.file.size,
+          ipfsHash: ipfsResult.cid,
+          blockchainHash: blockchainResult.transactionHash,
+          fileHash: fileHash, // Store original file hash for reference
+          collectorId: officer._id,
+          collectorName: officer.name,
+          collectorAddress: collectorAddress,
+          timestamp: new Date(),
+          gpsCoordinates: {
+            latitude: gpsLatitude ? parseFloat(gpsLatitude) : null,
+            longitude: gpsLongitude ? parseFloat(gpsLongitude) : null,
+          },
+          description: description || "",
+          status: "sealed",
+        });
+
+        await evidence.save();
+      }
 
       res.status(201).json({
         message: "Evidence uploaded and sealed successfully",
@@ -117,9 +137,19 @@ router.get("/", authenticate, async (req, res) => {
       .populate("collectorId", "name email")
       .sort({ createdAt: -1 });
 
+    // Add Etherscan URLs for Sepolia network
+    const evidenceWithLinks = evidence.map((item) => {
+      const evidenceObj = item.toObject();
+      // Generate Etherscan URL if we have a blockchain hash and it's Sepolia
+      if (evidenceObj.blockchainHash && !evidenceObj.blockchainHash.includes('localhost')) {
+        evidenceObj.etherscanUrl = `https://sepolia.etherscan.io/tx/${evidenceObj.blockchainHash}`;
+      }
+      return evidenceObj;
+    });
+
     res.json({
-      count: evidence.length,
-      evidence: evidence,
+      count: evidenceWithLinks.length,
+      evidence: evidenceWithLinks,
     });
   } catch (error) {
     console.error("Get evidence error:", error);

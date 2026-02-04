@@ -155,6 +155,28 @@ const JudgeDashboard = ({ user, onLogout }) => {
                       📄 View/Download File
                     </button>
                   </div>
+                  {item.blockchainHash && (
+                    <div className="blockchain-links">
+                      <a 
+                        href={`https://sepolia.etherscan.io/tx/${item.blockchainHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="etherscan-link"
+                      >
+                        🔗 View on Etherscan
+                      </a>
+                      {item.ipfsHash && (
+                        <a 
+                          href={`https://ipfs.io/ipfs/${item.ipfsHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ipfs-link"
+                        >
+                          📦 View on IPFS
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
